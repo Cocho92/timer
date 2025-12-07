@@ -1,6 +1,166 @@
-<p class="codepen" data-height="300" data-default-tab="html" data-slug-hash="xbVQmKa" data-pen-title="Untitled" data-user="Marco-Piatti" style="height: 300px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 2px solid; margin: 1em 0; padding: 1em;">
-      <span>See the Pen <a href="https://codepen.io/Marco-Piatti/pen/xbVQmKa">
-  Untitled</a> by Marco Piatti (<a href="https://codepen.io/Marco-Piatti">@Marco-Piatti</a>)
-  on <a href="https://codepen.io">CodePen</a>.</span>
-      </p>
-      <script async src="https://public.codepenassets.com/embed/index.js"></script>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timer</title>
+  <style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Google Sans', Roboto, Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #202124;
+}
+
+.timer-container {
+  text-align: center;
+  padding: 20px;
+}
+
+.display {
+  font-size: 72px;
+  font-weight: 400;
+  color: #e8eaed;
+  letter-spacing: -1px;
+  margin-bottom: 24px;
+}
+
+.quick-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.quick {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #5f6368;
+  border-radius: 20px;
+  background: transparent;
+  color: #8ab4f8;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick:hover {
+  background: #8ab4f833;
+  border-color: #8ab4f8;
+}
+
+.buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+button {
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.start {
+  background: #8ab4f8;
+  color: #202124;
+}
+
+.start:hover { 
+  background: #aecbfa; 
+}
+
+.reset {
+  background: #3c4043;
+  color: #e8eaed;
+}
+
+.reset:hover { 
+  background: #5f6368; 
+}
+  </style>
+</head>
+<body>
+  <div class="timer-container">
+    <div class="display">25:00</div>
+    
+    <div class="quick-buttons">
+      <button class="quick" onclick="setTime(25)">25 min</button>
+      <button class="quick" onclick="setTime(10)">10 min</button>
+      <button class="quick" onclick="setTime(5)">5 min</button>
+    </div>
+    
+    <div class="buttons">
+      <button class="start" onclick="toggleTimer()">Iniciar</button>
+      <button class="reset" onclick="resetTimer()">Reiniciar</button>
+    </div>
+  </div>
+
+  <script>
+let interval = null;
+let totalSeconds = 25 * 60;
+let isRunning = false;
+const display = document.querySelector('.display');
+const startBtn = document.querySelector('.start');
+
+function updateDisplay() {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  display.textContent = 
+    String(m).padStart(2, '0') + ':' +
+    String(s).padStart(2, '0');
+}
+
+function setTime(minutes) {
+  if (isRunning) return;
+  totalSeconds = minutes * 60;
+  updateDisplay();
+}
+
+function toggleTimer() {
+  if (isRunning) {
+    clearInterval(interval);
+    startBtn.textContent = 'Continuar';
+    isRunning = false;
+  } else {
+    if (totalSeconds === 0) return;
+    interval = setInterval(() => {
+      totalSeconds--;
+      updateDisplay();
+      if (totalSeconds <= 0) {
+        clearInterval(interval);
+        startBtn.textContent = 'Iniciar';
+        isRunning = false;
+        const audio = new AudioContext();
+        const osc = audio.createOscillator();
+        osc.connect(audio.destination);
+        osc.frequency.value = 800;
+        osc.start();
+        setTimeout(() => osc.stop(), 200);
+      }
+    }, 1000);
+    startBtn.textContent = 'Pausar';
+    isRunning = true;
+  }
+}
+
+function resetTimer() {
+  clearInterval(interval);
+  totalSeconds = 25 * 60;
+  isRunning = false;
+  updateDisplay();
+  startBtn.textContent = 'Iniciar';
+}
+
+updateDisplay();
+  </script>
+</body>
+</html>
