@@ -106,47 +106,64 @@ button {
 
   <script>
 let interval = null;
-let totalSeconds = 25 * 60;
 let isRunning = false;
+let endTime = null;
+let remainingMs = 25 * 60 * 1000; // guardamos en milisegundos
+
 const display = document.querySelector('.display');
 const startBtn = document.querySelector('.start');
 
 function updateDisplay() {
+  const totalSeconds = Math.ceil(remainingMs / 1000);
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
-  display.textContent = 
-    String(m).padStart(2, '0') + ':' +
-    String(s).padStart(2, '0');
+  display.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
 }
 
 function setTime(minutes) {
   if (isRunning) return;
-  totalSeconds = minutes * 60;
+  remainingMs = minutes * 60 * 1000;
+  updateDisplay();
+}
+
+function tick() {
+  if (!isRunning) return;
+  
+  const now = Date.now();
+  remainingMs = endTime - now;
+  
+  if (remainingMs <= 0) {
+    remainingMs = 0;
+    updateDisplay();
+    clearInterval(interval);
+    startBtn.textContent = 'Iniciar';
+    isRunning = false;
+    
+    // Beep
+    const audio = new AudioContext();
+    const osc = audio.createOscillator();
+    osc.connect(audio.destination);
+    osc.frequency.value = 800;
+    osc.start();
+    setTimeout(() => osc.stop(), 200);
+    return;
+  }
+  
   updateDisplay();
 }
 
 function toggleTimer() {
   if (isRunning) {
+    // Pausar: guardar tiempo restante
     clearInterval(interval);
+    remainingMs = endTime - Date.now();
     startBtn.textContent = 'Continuar';
     isRunning = false;
   } else {
-    if (totalSeconds === 0) return;
-    interval = setInterval(() => {
-      totalSeconds--;
-      updateDisplay();
-      if (totalSeconds <= 0) {
-        clearInterval(interval);
-        startBtn.textContent = 'Iniciar';
-        isRunning = false;
-        const audio = new AudioContext();
-        const osc = audio.createOscillator();
-        osc.connect(audio.destination);
-        osc.frequency.value = 800;
-        osc.start();
-        setTimeout(() => osc.stop(), 200);
-      }
-    }, 1000);
+    // Iniciar/continuar
+    if (remainingMs <= 0) return;
+    endTime = Date.now() + remainingMs;
+    interval = setInterval(tick, 100); // chequear más seguido para precisión
     startBtn.textContent = 'Pausar';
     isRunning = true;
   }
@@ -154,8 +171,9 @@ function toggleTimer() {
 
 function resetTimer() {
   clearInterval(interval);
-  totalSeconds = 25 * 60;
+  remainingMs = 25 * 60 * 1000;
   isRunning = false;
+  endTime = null;
   updateDisplay();
   startBtn.textContent = 'Iniciar';
 }
