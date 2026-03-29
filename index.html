@@ -153,9 +153,20 @@ let interval = null;
 let isRunning = false;
 let endTime = null;
 let remainingMs = 25 * 60 * 1000; // guardamos en milisegundos
+let audioCtx = null; // se inicializa en el primer gesto del usuario (requerido por iOS)
 
 const display = document.querySelector('.display');
 const startBtn = document.querySelector('.start');
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  // iOS suspende el contexto si no hay gesto reciente; lo reactivamos
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
 
 function updateDisplay() {
   const totalSeconds = Math.ceil(remainingMs / 1000);
@@ -166,6 +177,7 @@ function updateDisplay() {
 
 function setTime(minutes) {
   if (isRunning) return;
+  initAudio();
   remainingMs = minutes * 60 * 1000;
   updateDisplay();
 }
@@ -184,12 +196,15 @@ function tick() {
     isRunning = false;
     
     // Beep
-    const audio = new AudioContext();
-    const osc = audio.createOscillator();
-    osc.connect(audio.destination);
-    osc.frequency.value = 800;
-    osc.start();
-    setTimeout(() => osc.stop(), 200);
+    if (audioCtx) {
+      audioCtx.resume().then(() => {
+        const osc = audioCtx.createOscillator();
+        osc.connect(audioCtx.destination);
+        osc.frequency.value = 800;
+        osc.start();
+        setTimeout(() => osc.stop(), 200);
+      });
+    }
     return;
   }
   
@@ -198,6 +213,7 @@ function tick() {
 
 function setCustomTime() {
   if (isRunning) return;
+  initAudio();
   const mInput = document.getElementById('customMinutes');
   const sInput = document.getElementById('customSeconds');
   const m = parseInt(mInput.value) || 0;
@@ -209,6 +225,7 @@ function setCustomTime() {
 }
 
 function toggleTimer() {
+  initAudio();
   if (isRunning) {
     // Pausar: guardar tiempo restante
     clearInterval(interval);
